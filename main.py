@@ -1,18 +1,31 @@
+import requests
+import json
+import time
+import shutil
+import os
+import telebot
+from datetime import datetime, timedelta
+import schedule
 import os
 import time
 import arxiv
-from langchain_community.vectorstores import Qdrant
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
-from langchain_community.chat_models import ChatOllama
-from langchain.prompts import ChatPromptTemplate
-from langchain.pydantic_v1 import BaseModel
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
 import json, requests, datetime, arxiv, time
-from io import BytesIO
-from PyPDF2 import PdfReader
 
 pplx_key = ''
+bot_key = ''
+bot = telebot.TeleBot(bot_key)
+
+import os
+import shutil
+
+def remove_contents(path):
+    for item in os.listdir(path):
+        full_path = os.path.join(path, item)
+        if os.path.isfile(full_path):
+            os.remove(full_path)
+        elif os.path.isdir(full_path):
+            shutil.rmtree(full_path)
 
 def get_yesterday_date():
     today = datetime.date.today()
@@ -82,6 +95,7 @@ def papers_to_text(dirpath):
     # Remove empty lines and join lines into a single string
     full_text = " ".join(line for line in full_text.splitlines() if line)
     print("Total characters in the concatenated text:", len(full_text)) 
+    remove_contents(dirpath)
 
     return full_text
 
@@ -120,7 +134,7 @@ def llm_talkr(papers_text):
 
         return answer
 
-def main():
+def get_hfdailypapers_summary():
     # Create directory if not exists
     dirpath = "arxiv_papers"
     if not os.path.exists(dirpath):
@@ -136,5 +150,51 @@ def main():
 
     print(answer)
 
-if __name__ == '__main__':
+    return answer
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    text = 'Hello! I am sending Arxiv papers summaries every day to you.'
+    bot.send_message(message.chat.id, text)
+    update_users_db(message.chat.id) 
+    daily_papers_summary = get_hfdailypapers_summary()
+    bot.send_message(message.chat.id, daily_papers_summary)
+
+def send_daily_reminder():
+    current_time = datetime.now()
+    daily_papers_summary = get_hfdailypapers_summary()
+    if current_time.hour == 9:  # Check if it's 12:00 
+        for chat_id in users:  # Send reminder to each user
+            bot.send_message(chat_id, daily_papers_summary)
+
+def update_users_db(chat_id):
+    try:
+        with open('users.json', 'r') as f:
+            users_data = json.load(f)
+    except FileNotFoundError:
+        users_data = []
+
+    users_data.append(chat_id)
+    with open('users.json', 'w') as f:
+        json.dump(users_data, f)
+
+def load_users_from_db():
+    try:
+        with open('users.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+def main():
+    global users
+    users = load_users_from_db()  # Load users from the database
+    print("... Started Polling ...")
+    bot.polling(none_stop=True)
+    schedule.every().day.at("14:00").do(send_daily_reminder)  # Schedule the reminder
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+if __name__ == "__main__":
     main()
