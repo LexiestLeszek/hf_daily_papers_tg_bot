@@ -1,77 +1,51 @@
 # Hugging Face Daily Papers summarizer
 
+This repository contains the source code for a Telegram bot designed to fetch, summarize, and deliver daily research papers from Hugging Face's Daily Papers API. The bot uses several libraries including `requests`, `json`, `telebot` for Telegram interactions, `schedule` for scheduling tasks, and `arxiv` for fetching academic papers.
+
 ## Overview
 
-This thing utomates the process of downloading academic papers from arXiv based on titles of Hugging Face daily papers, converting these papers into text, and then using a large language model to generate summaries of the papers' contents. It's designed to be a comprehensive tool for researchers and students looking to stay up-to-date with the latest developments in fields such as Artificial Intelligence, Machine Learning, and Large Language Models.
+The bot performs the following operations:
 
-## Dependencies
+- Fetches daily papers from Hugging Face's Daily Papers API based on the previous day's date.
+- Searches for related papers on arXiv using the titles fetched from Hugging Face.
+- Downloads and saves these papers locally.
+- Converts the PDFs of these papers into plain text.
+- Uses the Perplexity AI model (`llama-3.1-70b-instruct`) to generate a summary of the papers' contents.
+- Schedules a daily reminder to send the summarized papers to subscribed users via Telegram.
+- Updates a database with new subscribers and sends them the daily summary upon subscribing.
 
-To run this script, you need to have the following Python packages installed:
+## Prerequisites
 
-- `os`
-- `time`
-- `arxiv`
-- `langchain_community` (including `vectorstores`, `document_loaders`, `chat_models`)
-- `langchain` (including `prompts`, `pydantic_v1`, `schema`)
-- `json`
-- `requests`
-- `datetime`
-- `PyPDF2`
+Before running the bot, ensure you have Python installed on your system. You will also need to install the required Python packages listed in the `requirements.txt` file. Additionally, you must obtain an API key for both Hugging Face and Perplexity AI, which should be stored in environment variables or directly in the script as placeholders.
 
-These dependencies can be installed via pip:
+## Setup
 
-```bash
-pip install os time arxiv langchain_community langchain json requests datetime PyPDF2
-```
-
-Note: Ensure you have the latest versions of these packages to avoid compatibility issues.
+1. Clone the repository to your local machine.
+2. Install the required Python packages by running `pip install -r requirements.txt`.
+3. Obtain API keys for Hugging Face and Perplexity AI and replace the placeholders in the script with your actual keys.
+4. Ensure you have a Telegram bot token; create one through the BotFather on Telegram if necessary.
+5. Update the bot token in the script with your Telegram bot token.
 
 ## Usage
 
-1. **Set Up**: Before running the script, ensure you have set up your environment variables correctly, especially the `pplx_key` variable, which is required for authentication with the Perplexity API.
+To run the bot, execute the script using Python:
 
-2. **Running the Script**: Execute the script by running:
+```bash
+python hf_daily_papers_bot.py
+```
 
-   ```bash
-   python main.py
-   ```
+### Commands
 
-   This will trigger the download of papers from the previous day, convert them into text, and generate summaries using the specified large language model.
+- `/start`: Subscribes the user to receive daily summaries and sends them the latest summary.
 
-## Functions
+### Scheduling and Notifications
 
-### `get_yesterday_date()`
-
-Returns the date of the previous day in the format `YYYY-MM-DD`.
-
-### `get_daily_papers()`
-
-Fetches daily papers from Hugging Face's API and returns the raw JSON response.
-
-### `get_paper_titles()`
-
-Extracts the titles of the papers fetched by `get_daily_papers()` and prints them out.
-
-### `save_papers(dirpath)`
-
-Downloads and saves the papers related to the titles obtained from `get_paper_titles()` into the specified directory.
-
-### `papers_to_text(dirpath)`
-
-Converts the downloaded papers into text format and concatenates them into a single string.
-
-### `llm_talkr(papers_text)`
-
-Generates summaries of the papers' contents using a large language model and returns the summarized text.
-
-### `main()`
-
-The main function orchestrates the entire process, including creating directories for storing papers, saving papers, converting them to text, and generating summaries.
+The bot schedules a daily task at 14:00 UTC to send out the daily summaries to all subscribed users. It checks for new subscriptions and updates its internal database accordingly.
 
 ## Contributing
 
-Contributions to this project are welcome! Please feel free to submit pull requests or open issues to suggest improvements or report bugs.
+Contributions to improve the bot's functionality, efficiency, or user experience are welcome. Please submit pull requests or issues detailing your proposed changes.
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
