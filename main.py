@@ -6,7 +6,6 @@ import os
 import telebot
 from datetime import datetime, timedelta
 import schedule
-import os
 import time
 import arxiv
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
@@ -15,9 +14,6 @@ import json, requests, datetime, arxiv, time
 pplx_key = ''
 bot_key = ''
 bot = telebot.TeleBot(bot_key)
-
-import os
-import shutil
 
 def remove_contents(path):
     for item in os.listdir(path):
@@ -160,12 +156,10 @@ def start(message):
     daily_papers_summary = get_hfdailypapers_summary()
     bot.send_message(message.chat.id, daily_papers_summary)
 
-def send_daily_reminder():
-    current_time = datetime.now()
+def send_daily_papers():
     daily_papers_summary = get_hfdailypapers_summary()
-    if current_time.hour == 9:  # Check if it's 12:00 
-        for chat_id in users:  # Send reminder to each user
-            bot.send_message(chat_id, daily_papers_summary)
+    for chat_id in users:  
+        bot.send_message(chat_id, daily_papers_summary)
 
 def update_users_db(chat_id):
     try:
@@ -190,7 +184,7 @@ def main():
     users = load_users_from_db()  # Load users from the database
     print("... Started Polling ...")
     bot.polling(none_stop=True)
-    schedule.every().day.at("14:00").do(send_daily_reminder)  # Schedule the reminder
+    schedule.every().day.at("10:00").do(send_daily_papers)  # Schedule the reminder
 
     while True:
         schedule.run_pending()
